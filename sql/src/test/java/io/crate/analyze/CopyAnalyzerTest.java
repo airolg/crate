@@ -27,9 +27,9 @@ import io.crate.exceptions.PartitionUnknownException;
 import io.crate.exceptions.SchemaUnknownException;
 import io.crate.exceptions.TableUnknownException;
 import io.crate.exceptions.UnsupportedFeatureException;
+import io.crate.execution.dsl.projection.WriterProjection;
 import io.crate.metadata.PartitionName;
 import io.crate.metadata.table.TableInfo;
-import io.crate.execution.dsl.projection.WriterProjection;
 import io.crate.test.integration.CrateDummyClusterServiceUnitTest;
 import io.crate.testing.SQLExecutor;
 import io.crate.types.ArrayType;
@@ -44,12 +44,8 @@ import java.util.Collections;
 import static com.carrotsearch.randomizedtesting.RandomizedTest.$;
 import static io.crate.analyze.TableDefinitions.TEST_PARTITIONED_TABLE_IDENT;
 import static io.crate.analyze.TableDefinitions.USER_TABLE_IDENT;
-import static io.crate.testing.SymbolMatchers.isFunction;
-import static io.crate.testing.SymbolMatchers.isLiteral;
-import static io.crate.testing.SymbolMatchers.isReference;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
+import static io.crate.testing.SymbolMatchers.*;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.IsEqual.equalTo;
 
 public class CopyAnalyzerTest extends CrateDummyClusterServiceUnitTest {
@@ -110,6 +106,20 @@ public class CopyAnalyzerTest extends CrateDummyClusterServiceUnitTest {
         assertThat(analysis.table().ident(), is(USER_TABLE_IDENT));
         Object value = ((Literal) analysis.uri()).value();
         assertThat(BytesRefs.toString(value), is(path));
+    }
+
+    @Test
+    public void testCopyFromWithInputFormatParamJson() {
+        CopyFromAnalyzedStatement analysis = e.analyze("copy users from '/some/distant/file.ext' with (format='json')");
+        assertThat(analysis.table().ident(), is(USER_TABLE_IDENT));
+        assertThat(analysis.inputFormat(), is(WriterProjection.InputFormat.JSON));
+    }
+
+    @Test
+    public void testCopyFromWithInputFormatParamCsv() {
+        CopyFromAnalyzedStatement analysis = e.analyze("copy users from '/some/distant/file.ext' with (format='csv')");
+        assertThat(analysis.table().ident(), is(USER_TABLE_IDENT));
+        assertThat(analysis.inputFormat(), is(WriterProjection.InputFormat.CSV));
     }
 
     @Test

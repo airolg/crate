@@ -85,11 +85,15 @@ class CopyAnalyzer {
     private static final StringSetting OUTPUT_FORMAT_SETTINGS =
         new StringSetting("format", ImmutableSet.of("json_object", "json_array"));
 
-    private static final ImmutableMap<String, SettingsApplier> SETTINGS_APPLIERS =
+    private static final StringSetting INPUT_FORMAT_SETTINGS =
+        new StringSetting("format", ImmutableSet.of("json", "csv"));
+
+    private static final ImmutableMap<String, SettingsApplier> OUTPUT_SETTINGS_APPLIERS =
         ImmutableMap.<String, SettingsApplier>builder()
             .put(COMPRESSION_SETTINGS.name(), new SettingsAppliers.StringSettingsApplier(COMPRESSION_SETTINGS))
             .put(OUTPUT_FORMAT_SETTINGS.name(), new SettingsAppliers.StringSettingsApplier(OUTPUT_FORMAT_SETTINGS))
             .build();
+
     private final Schemas schemas;
     private final Functions functions;
 
@@ -136,7 +140,10 @@ class CopyAnalyzer {
             throw CopyFromAnalyzedStatement.raiseInvalidType(uri.valueType());
         }
 
-        return new CopyFromAnalyzedStatement(tableInfo, settings, uri, partitionIdent, nodeFilters);
+        WriterProjection.InputFormat inputFormat =
+            settingAsEnum(WriterProjection.InputFormat.class, settings.get(INPUT_FORMAT_SETTINGS.name()));
+
+        return new CopyFromAnalyzedStatement(tableInfo, settings, uri, partitionIdent, nodeFilters, inputFormat);
     }
 
 
@@ -235,7 +242,7 @@ class CopyAnalyzer {
         querySpec.outputs(outputs);
 
         Settings settings = GenericPropertiesConverter.settingsFromProperties(
-            node.genericProperties(), analysis.parameterContext(), SETTINGS_APPLIERS).build();
+            node.genericProperties(), analysis.parameterContext(), OUTPUT_SETTINGS_APPLIERS).build();
 
         WriterProjection.CompressionType compressionType =
             settingAsEnum(WriterProjection.CompressionType.class, settings.get(COMPRESSION_SETTINGS.name()));

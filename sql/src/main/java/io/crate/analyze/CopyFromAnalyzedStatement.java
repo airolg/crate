@@ -23,9 +23,10 @@
 package io.crate.analyze;
 
 import io.crate.expression.symbol.Symbol;
+import io.crate.execution.dsl.projection.WriterProjection;
+import org.elasticsearch.cluster.node.DiscoveryNode;
 import io.crate.metadata.doc.DocTableInfo;
 import io.crate.types.DataType;
-import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.settings.Settings;
 
 import javax.annotation.Nullable;
@@ -37,16 +38,25 @@ public class CopyFromAnalyzedStatement extends AbstractCopyAnalyzedStatement {
     @Nullable
     private final String partitionIdent;
     private final Predicate<DiscoveryNode> nodePredicate;
+    private final WriterProjection.InputFormat inputFormat;
 
     public CopyFromAnalyzedStatement(DocTableInfo table,
                                      Settings settings,
                                      Symbol uri,
                                      @Nullable String partitionIdent,
-                                     Predicate<DiscoveryNode> nodePredicate) {
+                                     Predicate<DiscoveryNode> nodePredicate,
+                                     WriterProjection.InputFormat inputFormat) {
         super(settings, uri);
         this.table = table;
         this.partitionIdent = partitionIdent;
         this.nodePredicate = nodePredicate;
+        this.inputFormat = inputFormat;
+
+    }
+
+    @Nullable
+    public WriterProjection.InputFormat inputFormat() {
+        return inputFormat;
     }
 
     public DocTableInfo table() {

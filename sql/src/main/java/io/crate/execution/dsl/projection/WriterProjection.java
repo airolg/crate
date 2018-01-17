@@ -95,7 +95,10 @@ public class WriterProjection extends Projection {
         GZIP
     }
 
-
+    public enum InputFormat {
+        JSON,
+        CSV
+    }
 
     public WriterProjection(List<Symbol> inputs,
                             Symbol uri,
