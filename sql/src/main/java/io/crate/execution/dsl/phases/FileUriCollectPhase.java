@@ -25,6 +25,7 @@ package io.crate.execution.dsl.phases;
 import com.google.common.base.MoreObjects;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.Symbols;
+import io.crate.execution.dsl.projection.WriterProjection;
 import io.crate.planner.distribution.DistributionInfo;
 import io.crate.execution.dsl.projection.Projection;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -45,6 +46,7 @@ public class FileUriCollectPhase extends AbstractProjectionsPhase implements Col
     private final String compression;
     private final Boolean sharedStorage;
     private DistributionInfo distributionInfo = DistributionInfo.DEFAULT_BROADCAST;
+    private WriterProjection.InputFormat inputFormat;
 
     public FileUriCollectPhase(UUID jobId,
                                int phaseId,
@@ -54,13 +56,15 @@ public class FileUriCollectPhase extends AbstractProjectionsPhase implements Col
                                List<Symbol> toCollect,
                                List<Projection> projections,
                                String compression,
-                               Boolean sharedStorage) {
+                               Boolean sharedStorage,
+                               WriterProjection.InputFormat inputFormat) {
         super(jobId, phaseId, name, projections);
         this.executionNodes = executionNodes;
         this.targetUri = targetUri;
         this.toCollect = toCollect;
         this.compression = compression;
         this.sharedStorage = sharedStorage;
+        this.inputFormat = inputFormat;
         outputTypes = extractOutputTypes(toCollect, projections);
     }
 
@@ -91,6 +95,12 @@ public class FileUriCollectPhase extends AbstractProjectionsPhase implements Col
     public String compression() {
         return compression;
     }
+
+    @Nullable
+    public WriterProjection.InputFormat inputFormat() {
+        return inputFormat;
+    }
+
 
     public FileUriCollectPhase(StreamInput in) throws IOException {
         super(in);

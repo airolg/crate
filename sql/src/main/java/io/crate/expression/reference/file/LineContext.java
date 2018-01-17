@@ -22,13 +22,17 @@
 package io.crate.expression.reference.file;
 
 import io.crate.metadata.ColumnIdent;
+import io.crate.operation.collect.files.CSVLineProcessor;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentType;
 
 import javax.annotation.Nullable;
+import java.io.*;
 import java.util.Map;
+
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class LineContext {
 
@@ -43,17 +47,6 @@ public class LineContext {
         return null;
     }
 
-    public Map<String, Object> sourceAsMap() {
-        if (parsedSource == null) {
-            try {
-                parsedSource = XContentHelper.convertToMap(new BytesArray(rawSource), false, XContentType.JSON).v2();
-            } catch (NullPointerException e) {
-                return null;
-            }
-        }
-        return parsedSource;
-    }
-
     public Object get(ColumnIdent columnIdent) {
         Map<String, Object> parentMap = sourceAsMap();
         if (parentMap == null) {
@@ -66,8 +59,32 @@ public class LineContext {
         return val;
     }
 
+    public Map<String, Object> sourceAsMap() {
+        if (parsedSource == null) {
+            try {
+                parsedSource = XContentHelper.convertToMap(new BytesArray(rawSource), false, XContentType.JSON).v2();
+            } catch (NullPointerException e) {
+                return null;
+            }
+        }
+        return parsedSource;
+    }
+
     public void rawSource(byte[] bytes) {
-        this.rawSource = bytes;
+            this.rawSource = bytes;
+            this.parsedSource = null;
+    }
+
+    public void rawSourceCSV(byte[] line, byte[] header) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        CSVLineProcessor processor = new CSVLineProcessor(outputStream);
+        processor.parse(header, line);
+        byte[] csv = outputStream.toByteArray();
+        outputStream.close();
+
+        System.out.println("Text [Byte Format] : " + new String(csv));
+
+        this.rawSource = csv;
         this.parsedSource = null;
     }
 }

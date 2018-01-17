@@ -30,6 +30,7 @@ import io.crate.data.Input;
 import io.crate.data.Row;
 import io.crate.expression.InputRow;
 import io.crate.expression.reference.file.LineContext;
+import io.crate.execution.dsl.projection.WriterProjection;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.common.collect.Tuple;
@@ -76,6 +77,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
 
     private final List<UriWithGlob> urisWithGlob;
     private final Iterable<LineCollectorExpression<?>> collectorExpressions;
+    private WriterProjection.InputFormat inputFormat;
     private Iterator<Tuple<FileInput, UriWithGlob>> fileInputsIterator = null;
     private Tuple<FileInput, UriWithGlob> currentInput = null;
     private Iterator<URI> currentInputIterator = null;
@@ -84,6 +86,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
     private long currentLineNumber;
     private LineContext lineContext;
     private final Row row;
+    private String header;
 
     private FileReadingIterator(Collection<String> fileUris,
                                 List<? extends Input<?>> inputs,
@@ -92,7 +95,8 @@ public class FileReadingIterator implements BatchIterator<Row> {
                                 Map<String, FileInputFactory> fileInputFactories,
                                 Boolean shared,
                                 int numReaders,
-                                int readerNumber) {
+                                int readerNumber,
+                                WriterProjection.InputFormat inputFormat) {
         this.compressed = compression != null && compression.equalsIgnoreCase("gzip");
         this.row = new InputRow(inputs) {
             @Override
@@ -102,7 +106,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
                 } catch (ElasticsearchParseException e) {
                     throw new ElasticsearchParseException(String.format(Locale.ENGLISH,
                         "Failed to parse JSON in line: %d in file: \"%s\"%n" +
-                        "Original error message: %s", currentLineNumber, currentUri, e.getMessage()), e);
+                            "Original error message: %s", currentLineNumber, currentUri, e.getMessage()), e);
                 }
             }
         };
@@ -112,6 +116,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
         this.readerNumber = readerNumber;
         this.urisWithGlob = getUrisWithGlob(fileUris);
         this.collectorExpressions = collectorExpressions;
+        this.inputFormat = inputFormat;
         initCollectorState();
     }
 
@@ -132,13 +137,15 @@ public class FileReadingIterator implements BatchIterator<Row> {
                                                  Map<String, FileInputFactory> fileInputFactories,
                                                  Boolean shared,
                                                  int numReaders,
-                                                 int readerNumber) {
+                                                 int readerNumber,
+                                                 WriterProjection.InputFormat inputFormat) {
         return new CloseAssertingBatchIterator<>(new FileReadingIterator(fileUris, inputs, collectorExpressions,
-            compression, fileInputFactories, shared, numReaders, readerNumber));
+            compression, fileInputFactories, shared, numReaders, readerNumber, inputFormat));
     }
 
     private void initCollectorState() {
         lineContext = new LineContext();
+
         for (LineCollectorExpression<?> collectorExpression : collectorExpressions) {
             collectorExpression.startCollect(lineContext);
         }
@@ -163,14 +170,16 @@ public class FileReadingIterator implements BatchIterator<Row> {
     public boolean moveNext() {
         try {
             if (currentReader != null) {
+
                 String line = getLine(currentReader, currentLineNumber, 0);
                 if (line == null) {
                     closeCurrentReader();
                     return moveNext();
-                } else {
-                    lineContext.rawSource(line.getBytes(StandardCharsets.UTF_8));
-                    return true;
                 }
+
+                if (!header.isEmpty()) processAsCSV(line, header); else processAsJsonLine(line);
+
+                return true;
             } else if (currentInputIterator != null && currentInputIterator.hasNext()) {
                 advanceToNextUri(currentInput.v1());
                 return moveNext();
@@ -187,6 +196,22 @@ public class FileReadingIterator implements BatchIterator<Row> {
         return false;
     }
 
+    private boolean isInputIsJson() {
+        return inputFormat == WriterProjection.InputFormat.JSON || currentUri.toString().endsWith(".json");
+    }
+
+    private boolean isInputCsv() {
+        return inputFormat == WriterProjection.InputFormat.CSV || currentUri.toString().endsWith(".csv");
+    }
+
+    private void processAsJsonLine(String line) {
+        lineContext.rawSource(line.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private void processAsCSV(String line, String header) throws IOException {
+        lineContext.rawSourceCSV(line.getBytes(StandardCharsets.UTF_8), header.getBytes(StandardCharsets.UTF_8));
+    }
+
     private void advanceToNextUri(FileInput fileInput) throws IOException {
         currentUri = currentInputIterator.next();
         initCurrentReader(fileInput, currentUri);
@@ -198,6 +223,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
         UriWithGlob fileUri = currentInput.v2();
         Predicate<URI> uriPredicate = generateUriPredicate(fileInput, fileUri.globPredicate);
         List<URI> uris = getUris(fileInput, fileUri.uri, fileUri.preGlobUri, uriPredicate);
+
         if (uris.size() > 0) {
             currentInputIterator = uris.iterator();
             advanceToNextUri(fileInput);
@@ -206,9 +232,10 @@ public class FileReadingIterator implements BatchIterator<Row> {
 
     private void initCurrentReader(FileInput fileInput, URI uri) throws IOException {
         InputStream stream = fileInput.getStream(uri);
-        if (stream != null) {
+        if (stream != null ) {
             currentReader = createBufferedReader(stream);
-            currentLineNumber = 0;
+            currentLineNumber = (isInputCsv() ? 1 : 0);
+            header = (isInputCsv() ? currentReader.readLine() : "");
         }
     }
 
@@ -278,6 +305,14 @@ public class FileReadingIterator implements BatchIterator<Row> {
     @Override
     public boolean allLoaded() {
         return true;
+    }
+
+    public String getHeader() {
+        return header;
+    }
+
+    public void setHeader(String header) {
+        this.header = header;
     }
 
     private static class UriWithGlob {
