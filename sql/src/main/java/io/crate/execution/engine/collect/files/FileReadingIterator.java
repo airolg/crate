@@ -61,6 +61,8 @@ public class FileReadingIterator implements BatchIterator<Row> {
 
     private static final Logger LOGGER = Loggers.getLogger(FileReadingIterator.class);
     public static final int MAX_SOCKET_TIMEOUT_RETRIES = 5;
+    public static final int SECOND_LINE = 1;
+    public static final int FIRST_LINE = 0;
     private final Map<String, FileInputFactory> fileInputFactories;
     private final Boolean shared;
     private final int numReaders;
@@ -81,7 +83,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
     private long currentLineNumber;
     private LineContext lineContext;
     private final Row row;
-    private String header;
+    private Optional<String> csvHeader;
 
     private FileReadingIterator(Collection<String> fileUris,
                                 List<? extends Input<?>> inputs,
@@ -172,7 +174,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
                     return moveNext();
                 }
 
-                if (!header.isEmpty()) processAsCSV(line, header); else processAsJsonLine(line);
+                if (csvHeader.isPresent()) processAsCSV(csvHeader.get(), line); else processAsJsonLine(line);
 
                 return true;
             } else if (currentInputIterator != null && currentInputIterator.hasNext()) {
@@ -191,10 +193,6 @@ public class FileReadingIterator implements BatchIterator<Row> {
         return false;
     }
 
-    private boolean isInputIsJson() {
-        return inputFormat == WriterProjection.InputFormat.JSON || currentUri.toString().endsWith(".json");
-    }
-
     private boolean isInputCsv() {
         return inputFormat == WriterProjection.InputFormat.CSV || currentUri.toString().endsWith(".csv");
     }
@@ -203,7 +201,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
         lineContext.rawSource(line.getBytes(StandardCharsets.UTF_8));
     }
 
-    private void processAsCSV(String line, String header) throws IOException {
+    private void processAsCSV(String header, String line) throws IOException {
         lineContext.rawSourceCSV(header.getBytes(StandardCharsets.UTF_8), line.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -229,8 +227,8 @@ public class FileReadingIterator implements BatchIterator<Row> {
         InputStream stream = fileInput.getStream(uri);
         if (stream != null ) {
             currentReader = createBufferedReader(stream);
-            currentLineNumber = (isInputCsv() ? 1 : 0);
-            header = ((isInputCsv() ? currentReader.readLine() : ""));
+            csvHeader = Optional.ofNullable(isInputCsv() ? currentReader.readLine() : null);
+            currentLineNumber = (isInputCsv() ? SECOND_LINE : FIRST_LINE);
         }
     }
 
@@ -300,14 +298,6 @@ public class FileReadingIterator implements BatchIterator<Row> {
     @Override
     public boolean allLoaded() {
         return true;
-    }
-
-    public String getHeader() {
-        return header;
-    }
-
-    public void setHeader(String header) {
-        this.header = header;
     }
 
     private static class UriWithGlob {
