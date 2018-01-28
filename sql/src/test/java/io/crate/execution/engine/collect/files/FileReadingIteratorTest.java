@@ -26,7 +26,6 @@ import com.google.common.collect.ImmutableMap;
 import io.crate.data.BatchIterator;
 import io.crate.data.Input;
 import io.crate.data.Row;
-import io.crate.execution.dsl.projection.WriterProjection;
 import io.crate.metadata.FunctionIdent;
 import io.crate.metadata.FunctionImplementation;
 import io.crate.metadata.FunctionResolver;
@@ -53,6 +52,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
+import static io.crate.execution.dsl.projection.WriterProjection.*;
 import static io.crate.execution.dsl.projection.WriterProjection.InputFormat.CSV;
 import static io.crate.execution.dsl.projection.WriterProjection.InputFormat.JSON;
 import static io.crate.testing.TestingHelpers.createReference;
@@ -62,10 +62,10 @@ public class FileReadingIteratorTest extends CrateUnitTest {
     private InputFactory inputFactory;
     private Path tempFilePath;
     private String fileUri;
-    private File tmpFileJson;
+    private File tmpFile;
 
     @Before
-    public void prepare() throws Exception {
+    public void prepare() {
         Functions functions = new Functions(
             ImmutableMap.<FunctionIdent, FunctionImplementation>of(),
             ImmutableMap.<String, FunctionResolver>of()
@@ -99,8 +99,8 @@ public class FileReadingIteratorTest extends CrateUnitTest {
             Collections.singletonList(fileUri), null, CSV
         );
 
-        byte[] firstLine = "{\"name\": \"Arthur\", \"id\": \"4\"}".getBytes(StandardCharsets.UTF_8);
-        byte[] secondLine = "{\"name\": \"Trillian\", \"id\": \"5\" }".getBytes(StandardCharsets.UTF_8);
+        byte[] firstLine = "{\"name\":\"Arthur\",\"id\":\"4\"}".getBytes(StandardCharsets.UTF_8);
+        byte[] secondLine = "{\"name\":\"Trillian\",\"id\":\"5\"}".getBytes(StandardCharsets.UTF_8);
 
         List<Object[]> expectedResult = Arrays.asList(
             new Object[]{new BytesRef(firstLine)},
@@ -138,8 +138,8 @@ public class FileReadingIteratorTest extends CrateUnitTest {
             Collections.singletonList(fileUri), null, null
         );
 
-        byte[] firstLine = "{\"name\": \"Arthur\", \"id\": 4}".getBytes(StandardCharsets.UTF_8);
-        byte[] secondLine = "{\"id\": 5, \"name\": \"Trillian\"}".getBytes(StandardCharsets.UTF_8);
+        byte[] firstLine = "{\"name\":\"Arthur\",\"id\":\"4\"}".getBytes(StandardCharsets.UTF_8);
+        byte[] secondLine = "{\"name\":\"Trillian\",\"id\":\"5\"}".getBytes(StandardCharsets.UTF_8);
 
         List<Object[]> expectedResult = Arrays.asList(
             new Object[]{new BytesRef(firstLine)},
@@ -167,16 +167,16 @@ public class FileReadingIteratorTest extends CrateUnitTest {
     }
 
 
-    private void givenTempFileOfFormat(WriterProjection.InputFormat format) throws IOException {
+    private void givenTempFileOfFormat(InputFormat format) throws IOException {
         tempFilePath = createTempFile();
-        tmpFileJson = tempFilePath.toFile();
+        tmpFile = tempFilePath.toFile();
+
         switch (format) {
             case JSON:
-                writeJsonToOutputStream(tmpFileJson);
+                writeJsonToOutputStream(tmpFile);
+                break;
             case CSV:
-                writeCsvToOutputStream(tmpFileJson);
-            default:
-                writeJsonToOutputStream(tmpFileJson);
+                writeCsvToOutputStream(tmpFile);
         }
     }
 
@@ -186,8 +186,10 @@ public class FileReadingIteratorTest extends CrateUnitTest {
         switch (suffix) {
             case ".json":
                 writeJsonToOutputStream(tmpFile);
+                break;
             case ".csv":
                 writeCsvToOutputStream(tmpFile);
+                break;
             default:
                 writeJsonToOutputStream(tmpFile);
         }
@@ -212,7 +214,7 @@ public class FileReadingIteratorTest extends CrateUnitTest {
         fileUri = tempFilePath.toUri().toString();
     }
 
-    private BatchIterator<Row> createBatchIterator(Collection<String> fileUris, String compression, WriterProjection.InputFormat format) {
+    private BatchIterator<Row> createBatchIterator(Collection<String> fileUris, String compression, InputFormat format) {
         Reference raw = createReference("_raw", DataTypes.STRING);
         InputFactory.Context<LineCollectorExpression<?>> ctx =
             inputFactory.ctxForRefs(FileLineReferenceResolver::getImplementation);

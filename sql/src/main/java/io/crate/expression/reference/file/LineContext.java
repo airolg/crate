@@ -30,13 +30,14 @@ import org.elasticsearch.common.xcontent.XContentType;
 
 import javax.annotation.Nullable;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class LineContext {
 
-    private byte[] rawSource;
+    public byte[] rawSource;
     private Map<String, Object> parsedSource;
 
     @Nullable
@@ -75,16 +76,16 @@ public class LineContext {
             this.parsedSource = null;
     }
 
-    public void rawSourceCSV(byte[] line, byte[] header) throws IOException {
+    public void rawSourceCSV(byte[] header, byte[] line) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         CSVLineProcessor processor = new CSVLineProcessor(outputStream);
-        processor.parse(header, line);
-        byte[] csv = outputStream.toByteArray();
+        String json = processor.parse(header, line);
+        byte[] parsedToJson = outputStream.toByteArray();
         outputStream.close();
 
-        System.out.println("Text [Byte Format] : " + new String(csv));
+        System.out.println("Text [Byte Format] : " + new String(json.getBytes(StandardCharsets.UTF_8)));
 
-        this.rawSource = csv;
+        this.rawSource = json.getBytes(StandardCharsets.UTF_8);
         this.parsedSource = null;
     }
 }

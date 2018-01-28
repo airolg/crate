@@ -4,6 +4,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.json.JSONObject;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -27,36 +28,44 @@ public class CSVLineProcessor {
         builder = jsonBuilder(this.outputStream);
     }
 
-    public void parse(byte[] header, byte[] line) throws IOException {
+    public String parse(byte[] header, byte[] line) throws IOException {
 
         CSVParser headerParser = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(new InputStreamReader(new ByteArrayInputStream(header), StandardCharsets.UTF_8));
         CSVParser lineParser = CSVFormat.DEFAULT.parse(new InputStreamReader(new ByteArrayInputStream(line), StandardCharsets.UTF_8));
 
         final Set<String> keys = headerParser.getHeaderMap().keySet();
 
-        convertCSVToJsonAndWriteObject(keys, lineParser);
+        String json = convertCSVToJsonAndWriteObject(keys, lineParser);
 
         headerParser.close();
         lineParser.close();
+        return json;
     }
 
-    private void convertCSVToJsonAndWriteObject(Set<String> keys, CSVParser parser) {
+    private String convertCSVToJsonAndWriteObject(Set<String> keys, CSVParser parser) {
+        String json = "";
         for (CSVRecord record : parser) {
             if (record.size() > keys.size())
                 throw new IllegalArgumentException("Number of row entries exceeds number of columns");
             List<String> keyList = new ArrayList<>();
             keyList.addAll(keys);
-            convertCSVToJson(keyList, record);
+            json = convertCSVToJson(keyList, record);
         }
+        return json;
     }
 
-    private void convertCSVToJson(List<String> keys, CSVRecord values) {
+    private String convertCSVToJson(List<String> keys, CSVRecord values) {
+        String json = "";
+
         Map<String, String> mapForSingleRow = getMapForSingleRow(keys, values);
+        System.out.print(mapForSingleRow);
         try {
-            writeObject(mapForSingleRow);
+            json = writeObject(mapForSingleRow);
         } catch (IOException exception) {
             exception.printStackTrace();
         }
+
+        return new JSONObject(mapForSingleRow).toString();
     }
 
     private Map<String, String> getMapForSingleRow(List<String> keys, CSVRecord row) {
@@ -65,14 +74,15 @@ public class CSVLineProcessor {
             .collect(Collectors.toMap(keys::get, row::get));
     }
 
-    private void writeObject(Map<String, String> mapForSingleRow) throws IOException {
+    private String writeObject(Map<String, String> mapForSingleRow) throws IOException {
         builder.startObject();
         for (Map.Entry<String, String> mapEntry : mapForSingleRow.entrySet()) {
             builder.field(mapEntry.getKey(), mapEntry.getValue());
         }
         builder.endObject();
         builder.flush();
-        outputStream.write(NEW_LINE);
+        System.out.print("json string = " + builder.toString());
+        return builder.toString();
     }
 
 }
