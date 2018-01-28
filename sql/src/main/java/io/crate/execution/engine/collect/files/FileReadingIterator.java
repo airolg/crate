@@ -202,7 +202,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
     }
 
     private void processAsCSV(String header, String line) throws IOException {
-        lineContext.rawSourceCSV(header.getBytes(StandardCharsets.UTF_8), line.getBytes(StandardCharsets.UTF_8));
+        lineContext.rawSourceFromCSV(header.getBytes(StandardCharsets.UTF_8), line.getBytes(StandardCharsets.UTF_8));
     }
 
     private void advanceToNextUri(FileInput fileInput) throws IOException {

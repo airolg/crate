@@ -22,7 +22,7 @@
 package io.crate.expression.reference.file;
 
 import io.crate.metadata.ColumnIdent;
-import io.crate.operation.collect.files.CSVLineProcessor;
+import io.crate.operation.collect.files.CSVLineParser;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -76,16 +76,11 @@ public class LineContext {
             this.parsedSource = null;
     }
 
-    public void rawSourceCSV(byte[] header, byte[] line) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        CSVLineProcessor processor = new CSVLineProcessor(outputStream);
-        String json = processor.parse(header, line);
-        byte[] parsedToJson = outputStream.toByteArray();
-        outputStream.close();
+    public void rawSourceFromCSV(byte[] header, byte[] line) throws IOException {
+        CSVLineParser csvParser = new CSVLineParser();
+        String convertedCsvToJsonString = csvParser.parse(header, line);
 
-        System.out.println("Text [Byte Format] : " + new String(json.getBytes(StandardCharsets.UTF_8)));
-
-        this.rawSource = json.getBytes(StandardCharsets.UTF_8);
+        this.rawSource = convertedCsvToJsonString.getBytes(StandardCharsets.UTF_8);
         this.parsedSource = null;
     }
 }

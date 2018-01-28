@@ -27,7 +27,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -56,7 +55,7 @@ public class LineContextTest extends CrateUnitTest {
         String header = "name,id\n";
         String line = "Arthur,4\n";
 
-        subjectUnderTest.rawSourceCSV(header.getBytes(StandardCharsets.UTF_8),line.getBytes(StandardCharsets.UTF_8));
+        subjectUnderTest.rawSourceFromCSV(header.getBytes(StandardCharsets.UTF_8),line.getBytes(StandardCharsets.UTF_8));
 
         thenRawSourceIsAssignedAs("{\"name\":\"Arthur\",\"id\":\"4\"}".getBytes(StandardCharsets.UTF_8));
 
