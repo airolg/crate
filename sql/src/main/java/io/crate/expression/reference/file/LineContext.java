@@ -29,11 +29,9 @@ import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentType;
 
 import javax.annotation.Nullable;
-import java.io.*;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class LineContext {
 
@@ -72,8 +70,8 @@ public class LineContext {
     }
 
     public void rawSource(byte[] bytes) {
-            this.rawSource = bytes;
-            this.parsedSource = null;
+        this.rawSource = bytes;
+        this.parsedSource = null;
     }
 
     public void rawSourceFromCSV(byte[] header, byte[] line) throws IOException {

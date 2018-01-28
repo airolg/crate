@@ -48,7 +48,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Collection;
+import java.util.Locale;
+import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -174,7 +180,11 @@ public class FileReadingIterator implements BatchIterator<Row> {
                     return moveNext();
                 }
 
-                if (csvHeader.isPresent()) processAsCSV(csvHeader.get(), line); else processAsJsonLine(line);
+                if (csvHeader.isPresent()) {
+                    processAsCSV(csvHeader.get(), line);
+                } else {
+                    processAsJsonLine(line);
+                }
 
                 return true;
             } else if (currentInputIterator != null && currentInputIterator.hasNext()) {
@@ -225,7 +235,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
 
     private void initCurrentReader(FileInput fileInput, URI uri) throws IOException {
         InputStream stream = fileInput.getStream(uri);
-        if (stream != null ) {
+        if (stream != null) {
             currentReader = createBufferedReader(stream);
             csvHeader = Optional.ofNullable(isInputCsv() ? currentReader.readLine() : null);
             currentLineNumber = (isInputCsv() ? SECOND_LINE : FIRST_LINE);
