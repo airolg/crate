@@ -113,12 +113,12 @@ public class CopyIntegrationTest extends SQLHttpIntegrationTest {
     }
 
     @Test
-    public void testCopyFromFileWithCSVOption() throws Exception {
+    public void testCopyFromFileWithCSVOption() {
         execute("create table quotes (id int primary key, " +
             "quote string index using fulltext) with (number_of_replicas = 0)");
         ensureYellow();
 
-        execute("copy quotes from ? with (format='csv')", new Object[]{copyFilePath + "test_copy_from.ext"});
+        execute("copy quotes from ? with (format='csv')", new Object[]{copyFilePath + "test_copy_from_with_format.txt"});
         assertEquals(3L, response.rowCount());
         refresh();
 
@@ -311,7 +311,7 @@ public class CopyIntegrationTest extends SQLHttpIntegrationTest {
                 "quote string)");
         ensureGreen();
 
-        execute("copy quotes from ? with (compression='gzip')", new Object[]{copyFilePath + " "});
+        execute("copy quotes from ? with (compression='gzip')", new Object[]{copyFilePath + "test_copy_from.gz"});
         refresh();
 
         execute("select * from quotes");

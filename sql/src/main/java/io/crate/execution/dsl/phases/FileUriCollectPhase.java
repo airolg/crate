@@ -139,6 +139,7 @@ public class FileUriCollectPhase extends AbstractProjectionsPhase implements Col
             .add("outputTypes", outputTypes)
             .add("compression", compression)
             .add("sharedStorageDefault", sharedStorage)
+            .add("inputFormat", inputFormat)
             .toString();
     }
 

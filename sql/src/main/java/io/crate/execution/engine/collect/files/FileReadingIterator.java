@@ -67,8 +67,6 @@ public class FileReadingIterator implements BatchIterator<Row> {
 
     private static final Logger LOGGER = Loggers.getLogger(FileReadingIterator.class);
     public static final int MAX_SOCKET_TIMEOUT_RETRIES = 5;
-    public static final int SECOND_LINE = 1;
-    public static final int FIRST_LINE = 0;
     private final Map<String, FileInputFactory> fileInputFactories;
     private final Boolean shared;
     private final int numReaders;
@@ -152,6 +150,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
         for (LineCollectorExpression<?> collectorExpression : collectorExpressions) {
             collectorExpression.startCollect(lineContext);
         }
+
         List<Tuple<FileInput, UriWithGlob>> fileInputs = new ArrayList<>(urisWithGlob.size());
         for (UriWithGlob fileUri : urisWithGlob) {
             try {
@@ -173,7 +172,6 @@ public class FileReadingIterator implements BatchIterator<Row> {
     public boolean moveNext() {
         try {
             if (currentReader != null) {
-
                 String line = getLine(currentReader, currentLineNumber, 0);
                 if (line == null) {
                     closeCurrentReader();
@@ -182,6 +180,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
 
                 if (csvHeader.isPresent()) {
                     processAsCSV(csvHeader.get(), line);
+                    return true;
                 } else {
                     processAsJsonLine(line);
                 }
@@ -204,7 +203,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
     }
 
     private boolean isInputCsv() {
-        return inputFormat == WriterProjection.InputFormat.CSV || currentUri.toString().endsWith(".csv");
+        return (inputFormat == WriterProjection.InputFormat.CSV) || currentUri.toString().endsWith(".csv");
     }
 
     private void processAsJsonLine(String line) {
@@ -238,7 +237,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
         if (stream != null) {
             currentReader = createBufferedReader(stream);
             csvHeader = Optional.ofNullable(isInputCsv() ? currentReader.readLine() : null);
-            currentLineNumber = (isInputCsv() ? SECOND_LINE : FIRST_LINE);
+            currentLineNumber = (isInputCsv() ? 1 : 0);
         }
     }
 
