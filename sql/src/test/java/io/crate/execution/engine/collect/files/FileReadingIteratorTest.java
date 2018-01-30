@@ -109,7 +109,6 @@ public class FileReadingIteratorTest extends CrateUnitTest {
         tester.verifyResultAndEdgeCaseBehaviour(expectedResult);
     }
 
-
     @Test
     public void testIteratorContract_givenNoInputFormat_AndJSONExtension_thenParsesAsJson() throws Exception {
         givenTempFileWithSuffix(".json");
@@ -165,7 +164,6 @@ public class FileReadingIteratorTest extends CrateUnitTest {
         BatchIteratorTester tester = new BatchIteratorTester(batchIteratorSupplier);
         tester.verifyResultAndEdgeCaseBehaviour(expectedResult);
     }
-
 
     private void givenTempFileOfFormat(InputFormat format) throws IOException {
         tempFilePath = createTempFile();

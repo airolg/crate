@@ -101,7 +101,6 @@ public class FileUriCollectPhase extends AbstractProjectionsPhase implements Col
         return inputFormat;
     }
 
-
     public FileUriCollectPhase(StreamInput in) throws IOException {
         super(in);
         compression = in.readOptionalString();

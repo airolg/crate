@@ -57,7 +57,6 @@ public class CSVLineParser {
             .withTrim()
             .parse(new InputStreamReader(new ByteArrayInputStream(row), StandardCharsets.UTF_8));
 
-
         final Set<String> keys = headerParser.getHeaderMap().keySet();
 
         String parsedCsv = convertCSVToJsonString(keys, rowParser);

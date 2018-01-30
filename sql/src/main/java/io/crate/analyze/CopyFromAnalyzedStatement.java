@@ -51,7 +51,6 @@ public class CopyFromAnalyzedStatement extends AbstractCopyAnalyzedStatement {
         this.partitionIdent = partitionIdent;
         this.nodePredicate = nodePredicate;
         this.inputFormat = inputFormat;
-
     }
 
     @Nullable
