@@ -28,13 +28,15 @@ import io.crate.expression.symbol.Symbols;
 import io.crate.execution.dsl.projection.WriterProjection;
 import io.crate.planner.distribution.DistributionInfo;
 import io.crate.execution.dsl.projection.Projection;
-import io.crate.sql.tree.Except;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 
 public class FileUriCollectPhase extends AbstractProjectionsPhase implements CollectPhase {
 

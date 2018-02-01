@@ -149,7 +149,7 @@ class CopyAnalyzer {
 
     private WriterProjection.InputFormat setFormatAsEnum(Settings settings, String name) {
         WriterProjection.InputFormat format;
-        return ((format = settingAsEnum(WriterProjection.InputFormat.class, settings.get(name))) != null ) ? format : JSON;
+        return ((format = settingAsEnum(WriterProjection.InputFormat.class, settings.get(name))) != null) ? format : JSON;
     }
 
 

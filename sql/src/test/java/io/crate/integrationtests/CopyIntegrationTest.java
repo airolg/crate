@@ -118,7 +118,7 @@ public class CopyIntegrationTest extends SQLHttpIntegrationTest {
             "quote string index using fulltext) with (number_of_replicas = 0)");
         ensureYellow();
 
-        execute("copy quotes from ? with (format='csv')", new Object[]{copyFilePath + "test_copy_from_with_format.txt"});
+        execute("copy quotes from ? with (format='csv')", new Object[]{copyFilePath + "test_copy_from.json"});
         assertEquals(3L, response.rowCount());
         refresh();
 

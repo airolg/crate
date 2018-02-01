@@ -61,7 +61,7 @@ To install the CrateDB locally, run::
 
 And then start CrateDB like this::
 
-    ./app/build/install/crate/bin/crate
+    $ ./app/build/install/crate/bin/crate
 
 Build a tarball like so::
 
