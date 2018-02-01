@@ -28,15 +28,13 @@ import io.crate.expression.symbol.Symbols;
 import io.crate.execution.dsl.projection.WriterProjection;
 import io.crate.planner.distribution.DistributionInfo;
 import io.crate.execution.dsl.projection.Projection;
+import io.crate.sql.tree.Except;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class FileUriCollectPhase extends AbstractProjectionsPhase implements CollectPhase {
 
@@ -114,6 +112,7 @@ public class FileUriCollectPhase extends AbstractProjectionsPhase implements Col
         }
         this.executionNodes = nodes;
         toCollect = Symbols.listFromStream(in);
+        inputFormat = WriterProjection.InputFormat.values()[in.readInt()];
     }
 
     @Override
@@ -127,6 +126,8 @@ public class FileUriCollectPhase extends AbstractProjectionsPhase implements Col
             out.writeString(node);
         }
         Symbols.toStream(toCollect, out);
+        out.writeInt(inputFormat.ordinal());
+
     }
 
     @Override

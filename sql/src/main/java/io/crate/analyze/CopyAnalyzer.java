@@ -76,6 +76,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import static io.crate.execution.dsl.projection.WriterProjection.InputFormat.JSON;
+
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 class CopyAnalyzer {
 
@@ -140,10 +142,14 @@ class CopyAnalyzer {
             throw CopyFromAnalyzedStatement.raiseInvalidType(uri.valueType());
         }
 
-        WriterProjection.InputFormat inputFormat =
-            settingAsEnum(WriterProjection.InputFormat.class, settings.get(INPUT_FORMAT_SETTINGS.name()));
+        WriterProjection.InputFormat inputFormat = setFormatAsEnum(settings, INPUT_FORMAT_SETTINGS.name());
 
         return new CopyFromAnalyzedStatement(tableInfo, settings, uri, partitionIdent, nodeFilters, inputFormat);
+    }
+
+    private WriterProjection.InputFormat setFormatAsEnum(Settings settings, String name) {
+        WriterProjection.InputFormat format;
+        return ((format = settingAsEnum(WriterProjection.InputFormat.class, settings.get(name))) != null ) ? format : JSON;
     }
 
 

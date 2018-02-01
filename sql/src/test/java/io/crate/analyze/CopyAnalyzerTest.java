@@ -65,7 +65,7 @@ public class CopyAnalyzerTest extends CrateDummyClusterServiceUnitTest {
     }
 
     @Test
-    public void testCopyFromExistingPartitionedTable() throws Exception {
+    public void testCopyFromExistingPartitionedTable() {
         CopyFromAnalyzedStatement analysis = e.analyze("copy parted from '/some/distant/file.ext'");
         assertThat(analysis.table().ident(), is(TEST_PARTITIONED_TABLE_IDENT));
         assertThat(analysis.uri(), isLiteral("/some/distant/file.ext"));
@@ -109,17 +109,24 @@ public class CopyAnalyzerTest extends CrateDummyClusterServiceUnitTest {
     }
 
     @Test
-    public void testCopyFromWithInputFormatParamJson() {
+    public void testCopyFromWithInputFormatJson() {
         CopyFromAnalyzedStatement analysis = e.analyze("copy users from '/some/distant/file.ext' with (format='json')");
         assertThat(analysis.table().ident(), is(USER_TABLE_IDENT));
         assertThat(analysis.inputFormat(), is(WriterProjection.InputFormat.JSON));
     }
 
     @Test
-    public void testCopyFromWithInputFormatParamCsv() {
+    public void testCopyFromWithInputFormatCsv() {
         CopyFromAnalyzedStatement analysis = e.analyze("copy users from '/some/distant/file.ext' with (format='csv')");
         assertThat(analysis.table().ident(), is(USER_TABLE_IDENT));
         assertThat(analysis.inputFormat(), is(WriterProjection.InputFormat.CSV));
+    }
+
+    @Test
+    public void testCopyFromWithoutInputFormat_thenDefaultsToJson() {
+        CopyFromAnalyzedStatement analysis = e.analyze("copy users from '/some/distant/file.ext'");
+        assertThat(analysis.table().ident(), is(USER_TABLE_IDENT));
+        assertThat(analysis.inputFormat(), is(WriterProjection.InputFormat.JSON));
     }
 
     @Test
