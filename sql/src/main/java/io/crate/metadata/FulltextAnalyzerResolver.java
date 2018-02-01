@@ -32,13 +32,13 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.settings.loader.JsonSettingsLoader;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.analysis.AnalysisRegistry;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -216,10 +216,13 @@ public class FulltextAnalyzerResolver {
     }
 
     public static Settings decodeSettings(String encodedSettings) throws IOException {
+        if (true) {
+            throw new UnsupportedOperationException("TODO");
+        }
+        /*
         Map<String, String> loaded = new JsonSettingsLoader(false).load(encodedSettings);
         return Settings.builder().put(loaded).build();
-
-
+        */
     }
 
     /**
@@ -263,7 +266,7 @@ public class FulltextAnalyzerResolver {
      * @return true if exists, false otherwise
      */
     private boolean hasCustomThingy(String name, CustomType type) {
-        return clusterService.state().metaData().persistentSettings().getAsMap().containsKey(
+        return clusterService.state().metaData().persistentSettings().hasValue(
             String.format(Locale.ROOT, "%s%s.%s", AnalyzerSettings.CUSTOM_ANALYSIS_SETTINGS_PREFIX, type.getName(), name));
     }
 
@@ -294,23 +297,23 @@ public class FulltextAnalyzerResolver {
                 }
             }
 
-            String[] tokenFilterNames = analyzerSettings.getAsArray(String.format(Locale.ENGLISH, "index.analysis.analyzer.%s.filter", name));
-            for (int i = 0; i < tokenFilterNames.length; i++) {
-                Settings customTokenFilterSettings = getCustomTokenFilter(tokenFilterNames[i]);
+            List<String> tokenFilterNames = analyzerSettings.getAsList(String.format(Locale.ENGLISH, "index.analysis.analyzer.%s.filter", name));
+            for (String tokenFilterName : tokenFilterNames) {
+                Settings customTokenFilterSettings = getCustomTokenFilter(tokenFilterName);
                 if (customTokenFilterSettings != null) {
                     builder.put(customTokenFilterSettings);
-                } else if (!hasBuiltInTokenFilter(tokenFilterNames[i])) {
-                    throw new AnalyzerInvalidException(String.format(Locale.ENGLISH, "Invalid Analyzer: could not resolve token-filter '%s'", tokenFilterNames[i]));
+                } else if (!hasBuiltInTokenFilter(tokenizerName)) {
+                    throw new AnalyzerInvalidException(String.format(Locale.ENGLISH, "Invalid Analyzer: could not resolve token-filter '%s'", tokenFilterName));
                 }
             }
 
-            String[] charFilterNames = analyzerSettings.getAsArray(String.format(Locale.ENGLISH, "index.analysis.analyzer.%s.char_filter", name));
-            for (int i = 0; i < charFilterNames.length; i++) {
-                Settings customCharFilterSettings = getCustomCharFilter(charFilterNames[i]);
+            List<String> charFilterNames = analyzerSettings.getAsList(String.format(Locale.ENGLISH, "index.analysis.analyzer.%s.char_filter", name));
+            for (String charFilterName : charFilterNames) {
+                Settings customCharFilterSettings = getCustomCharFilter(charFilterName);
                 if (customCharFilterSettings != null) {
                     builder.put(customCharFilterSettings);
-                } else if (!hasBuiltInCharFilter(charFilterNames[i])) {
-                    throw new AnalyzerInvalidException(String.format(Locale.ENGLISH, "Invalid Analyzer: could not resolve char-filter '%s'", charFilterNames[i]));
+                } else if (!hasBuiltInCharFilter(charFilterName)) {
+                    throw new AnalyzerInvalidException(String.format(Locale.ENGLISH, "Invalid Analyzer: could not resolve char-filter '%s'", charFilterName));
                 }
             }
         } else {
