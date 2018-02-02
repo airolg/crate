@@ -58,6 +58,13 @@ public class HashJoinDetectorTest extends CrateUnitTest {
     }
 
     @Test
+    public void testNotPossibleOnInnerWithEqAndScalarOnMultipleRelations() {
+        Symbol joinCondition = SQL_EXPRESSIONS.asSymbol("concat(t1.a, t2.b) = 'foo'");
+        JoinPair joinPair = JoinPair.of(T3.T1, T3.T2, JoinType.INNER, joinCondition);
+        assertThat(HashJoinDetector.isHashJoinPossible(joinPair), is(false));
+    }
+
+    @Test
     public void testNotPossibleOnInnerContainingEqOrAnyCondition() {
         Symbol joinCondition = SQL_EXPRESSIONS.asSymbol("t1.x = t2.y and t1.a = t2.b or t1.i = t2.i");
         JoinPair joinPair = JoinPair.of(T3.T1, T3.T2, JoinType.INNER, joinCondition);
