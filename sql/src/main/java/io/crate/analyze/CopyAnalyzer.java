@@ -80,6 +80,7 @@ import static io.crate.execution.dsl.projection.WriterProjection.InputFormat.JSO
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 class CopyAnalyzer {
+    private static final String JSON_STRING = "json";
 
     private static final StringSetting COMPRESSION_SETTINGS =
         new StringSetting("compression", ImmutableSet.of("gzip"));
@@ -88,7 +89,7 @@ class CopyAnalyzer {
         new StringSetting("format", ImmutableSet.of("json_object", "json_array"));
 
     private static final StringSetting INPUT_FORMAT_SETTINGS =
-        new StringSetting("format", ImmutableSet.of("json", "csv"));
+        new StringSetting("format", ImmutableSet.of(JSON_STRING, "csv"));
 
     private static final ImmutableMap<String, SettingsApplier> OUTPUT_SETTINGS_APPLIERS =
         ImmutableMap.<String, SettingsApplier>builder()
@@ -132,6 +133,7 @@ class CopyAnalyzer {
             Map<String, Expression> properties = new HashMap<>(node.genericProperties().properties());
             nodeFilters = discoveryNodePredicate(analysis.parameterContext().parameters(), properties.remove(NodeFilters.NAME));
             settings = settingsFromProperties(properties, expressionAnalyzer, expressionAnalysisContext);
+
         }
         Symbol uri = expressionAnalyzer.convert(node.path(), expressionAnalysisContext);
         uri = normalizer.normalize(uri, analysis.transactionContext());
@@ -142,16 +144,11 @@ class CopyAnalyzer {
             throw CopyFromAnalyzedStatement.raiseInvalidType(uri.valueType());
         }
 
-        WriterProjection.InputFormat inputFormat = setFormatAsEnum(settings, INPUT_FORMAT_SETTINGS.name());
+        WriterProjection.InputFormat inputFormat =
+            settingAsEnum(WriterProjection.InputFormat.class, settings.get(INPUT_FORMAT_SETTINGS.name(), JSON_STRING));
 
         return new CopyFromAnalyzedStatement(tableInfo, settings, uri, partitionIdent, nodeFilters, inputFormat);
     }
-
-    private WriterProjection.InputFormat setFormatAsEnum(Settings settings, String name) {
-        WriterProjection.InputFormat format;
-        return ((format = settingAsEnum(WriterProjection.InputFormat.class, settings.get(name))) != null) ? format : JSON;
-    }
-
 
     private ExpressionAnalyzer createExpressionAnalyzer(Analysis analysis, DocTableRelation tableRelation, Operation operation) {
         return new ExpressionAnalyzer(

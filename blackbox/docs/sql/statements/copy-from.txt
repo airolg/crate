@@ -45,15 +45,17 @@ below), which may be useful if the files do not have a `.json` or `.csv` file ex
 In the case that a file does not have a relevant file extension and format option has not
 been provided, then by default the file with be processed as JSON.
 
-Files have to be UTF-8 encoded, and in the case of JSON, contain a single
-JSON object per line. Any keys in the object will be added as columns,
+Files have to be UTF-8 encoded.  Any keys in the object will be added as columns,
 regardless of the previously defined table. Empty lines are simply skipped.
 
+JSON file inputs must contain a single JSON object per line.
 Example JSON data::
 
     {"id": 1, "quote": "Don't panic"}
     {"id": 2, "quote": "Ford, you're turning into a penguin. Stop it."}
 
+CSV file inputs must contain a header with comma-separated values, which will
+be added as columns.
 Example CSV data::
 
     id,quote
