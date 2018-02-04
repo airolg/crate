@@ -25,7 +25,6 @@ package io.crate.execution.dsl.phases;
 import com.google.common.base.MoreObjects;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.Symbols;
-import io.crate.execution.dsl.projection.WriterProjection;
 import io.crate.planner.distribution.DistributionInfo;
 import io.crate.execution.dsl.projection.Projection;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -46,7 +45,7 @@ public class FileUriCollectPhase extends AbstractProjectionsPhase implements Col
     private final String compression;
     private final Boolean sharedStorage;
     private DistributionInfo distributionInfo = DistributionInfo.DEFAULT_BROADCAST;
-    private WriterProjection.InputFormat inputFormat;
+    private InputFormat inputFormat;
 
     public FileUriCollectPhase(UUID jobId,
                                int phaseId,
@@ -57,7 +56,7 @@ public class FileUriCollectPhase extends AbstractProjectionsPhase implements Col
                                List<Projection> projections,
                                String compression,
                                Boolean sharedStorage,
-                               WriterProjection.InputFormat inputFormat) {
+                               InputFormat inputFormat) {
         super(jobId, phaseId, name, projections);
         this.executionNodes = executionNodes;
         this.targetUri = targetUri;
@@ -67,6 +66,12 @@ public class FileUriCollectPhase extends AbstractProjectionsPhase implements Col
         this.inputFormat = inputFormat;
         outputTypes = extractOutputTypes(toCollect, projections);
     }
+
+    public enum InputFormat {
+        JSON,
+        CSV
+    }
+
 
     public Symbol targetUri() {
         return targetUri;
@@ -96,8 +101,7 @@ public class FileUriCollectPhase extends AbstractProjectionsPhase implements Col
         return compression;
     }
 
-    @Nullable
-    public WriterProjection.InputFormat inputFormat() {
+    public InputFormat inputFormat() {
         return inputFormat;
     }
 
@@ -114,7 +118,7 @@ public class FileUriCollectPhase extends AbstractProjectionsPhase implements Col
         }
         this.executionNodes = nodes;
         toCollect = Symbols.listFromStream(in);
-        inputFormat = WriterProjection.InputFormat.values()[in.readInt()];
+        inputFormat = InputFormat.values()[in.readVInt()];
     }
 
     @Override
@@ -128,7 +132,7 @@ public class FileUriCollectPhase extends AbstractProjectionsPhase implements Col
             out.writeString(node);
         }
         Symbols.toStream(toCollect, out);
-        out.writeInt(inputFormat.ordinal());
+        out.writeVInt(inputFormat.ordinal());
 
     }
 

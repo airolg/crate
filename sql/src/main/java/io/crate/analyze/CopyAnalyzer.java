@@ -31,6 +31,7 @@ import io.crate.analyze.expressions.ExpressionToObjectVisitor;
 import io.crate.analyze.relations.DocTableRelation;
 import io.crate.analyze.relations.NameFieldProvider;
 import io.crate.analyze.relations.QueriedDocTable;
+import io.crate.execution.dsl.phases.FileUriCollectPhase;
 import io.crate.expression.eval.EvaluatingNormalizer;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.ValueSymbolVisitor;
@@ -75,8 +76,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
-
-import static io.crate.execution.dsl.projection.WriterProjection.InputFormat.JSON;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 class CopyAnalyzer {
@@ -144,8 +143,8 @@ class CopyAnalyzer {
             throw CopyFromAnalyzedStatement.raiseInvalidType(uri.valueType());
         }
 
-        WriterProjection.InputFormat inputFormat =
-            settingAsEnum(WriterProjection.InputFormat.class, settings.get(INPUT_FORMAT_SETTINGS.name(), JSON_STRING));
+        FileUriCollectPhase.InputFormat inputFormat =
+            settingAsEnum(FileUriCollectPhase.InputFormat.class, settings.get(INPUT_FORMAT_SETTINGS.name(), JSON_STRING));
 
         return new CopyFromAnalyzedStatement(tableInfo, settings, uri, partitionIdent, nodeFilters, inputFormat);
     }

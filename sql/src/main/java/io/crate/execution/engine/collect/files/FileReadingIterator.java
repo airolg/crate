@@ -28,6 +28,7 @@ import io.crate.data.BatchIterator;
 import io.crate.data.CloseAssertingBatchIterator;
 import io.crate.data.Input;
 import io.crate.data.Row;
+import io.crate.execution.dsl.phases.FileUriCollectPhase;
 import io.crate.expression.InputRow;
 import io.crate.expression.reference.file.LineContext;
 import io.crate.execution.dsl.projection.WriterProjection;
@@ -78,7 +79,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
 
     private final List<UriWithGlob> urisWithGlob;
     private final Iterable<LineCollectorExpression<?>> collectorExpressions;
-    private WriterProjection.InputFormat inputFormat;
+    private FileUriCollectPhase.InputFormat inputFormat;
     private Iterator<Tuple<FileInput, UriWithGlob>> fileInputsIterator = null;
     private Tuple<FileInput, UriWithGlob> currentInput = null;
     private Iterator<URI> currentInputIterator = null;
@@ -97,7 +98,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
                                 Boolean shared,
                                 int numReaders,
                                 int readerNumber,
-                                WriterProjection.InputFormat inputFormat) {
+                                FileUriCollectPhase.InputFormat inputFormat) {
         this.compressed = compression != null && compression.equalsIgnoreCase("gzip");
         this.row = new InputRow(inputs) {
             @Override
@@ -139,7 +140,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
                                                  Boolean shared,
                                                  int numReaders,
                                                  int readerNumber,
-                                                 WriterProjection.InputFormat inputFormat) {
+                                                 FileUriCollectPhase.InputFormat inputFormat) {
         return new CloseAssertingBatchIterator<>(new FileReadingIterator(fileUris, inputs, collectorExpressions,
             compression, fileInputFactories, shared, numReaders, readerNumber, inputFormat));
     }
@@ -203,7 +204,7 @@ public class FileReadingIterator implements BatchIterator<Row> {
     }
 
     private boolean isInputCsv() {
-        return (inputFormat == WriterProjection.InputFormat.CSV) || currentUri.toString().endsWith(".csv");
+        return (inputFormat == FileUriCollectPhase.InputFormat.CSV) || currentUri.toString().endsWith(".csv");
     }
 
     private void processAsJsonLine(String line) {

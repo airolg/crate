@@ -22,6 +22,7 @@
 package io.crate.analyze;
 
 import io.crate.analyze.relations.QueriedDocTable;
+import io.crate.execution.dsl.phases.FileUriCollectPhase;
 import io.crate.expression.symbol.Literal;
 import io.crate.exceptions.PartitionUnknownException;
 import io.crate.exceptions.SchemaUnknownException;
@@ -112,21 +113,21 @@ public class CopyAnalyzerTest extends CrateDummyClusterServiceUnitTest {
     public void testCopyFromWithInputFormatJson() {
         CopyFromAnalyzedStatement analysis = e.analyze("copy users from '/some/distant/file.ext' with (format='json')");
         assertThat(analysis.table().ident(), is(USER_TABLE_IDENT));
-        assertThat(analysis.inputFormat(), is(WriterProjection.InputFormat.JSON));
+        assertThat(analysis.inputFormat(), is(FileUriCollectPhase.InputFormat.JSON));
     }
 
     @Test
     public void testCopyFromWithInputFormatCsv() {
         CopyFromAnalyzedStatement analysis = e.analyze("copy users from '/some/distant/file.ext' with (format='csv')");
         assertThat(analysis.table().ident(), is(USER_TABLE_IDENT));
-        assertThat(analysis.inputFormat(), is(WriterProjection.InputFormat.CSV));
+        assertThat(analysis.inputFormat(), is(FileUriCollectPhase.InputFormat.CSV));
     }
 
     @Test
     public void testCopyFromWithoutInputFormat_thenDefaultsToJson() {
         CopyFromAnalyzedStatement analysis = e.analyze("copy users from '/some/distant/file.ext'");
         assertThat(analysis.table().ident(), is(USER_TABLE_IDENT));
-        assertThat(analysis.inputFormat(), is(WriterProjection.InputFormat.JSON));
+        assertThat(analysis.inputFormat(), is(FileUriCollectPhase.InputFormat.JSON));
     }
 
     @Test

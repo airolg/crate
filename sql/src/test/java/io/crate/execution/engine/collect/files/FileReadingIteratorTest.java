@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import io.crate.data.BatchIterator;
 import io.crate.data.Input;
 import io.crate.data.Row;
+import io.crate.execution.dsl.phases.FileUriCollectPhase;
 import io.crate.metadata.FunctionIdent;
 import io.crate.metadata.FunctionImplementation;
 import io.crate.metadata.FunctionResolver;
@@ -52,9 +53,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static io.crate.execution.dsl.projection.WriterProjection.*;
-import static io.crate.execution.dsl.projection.WriterProjection.InputFormat.CSV;
-import static io.crate.execution.dsl.projection.WriterProjection.InputFormat.JSON;
+import static io.crate.execution.dsl.phases.FileUriCollectPhase.InputFormat.CSV;
+import static io.crate.execution.dsl.phases.FileUriCollectPhase.InputFormat.JSON;
 import static io.crate.testing.TestingHelpers.createReference;
 
 public class FileReadingIteratorTest extends CrateUnitTest {
@@ -165,7 +165,7 @@ public class FileReadingIteratorTest extends CrateUnitTest {
         tester.verifyResultAndEdgeCaseBehaviour(expectedResult);
     }
 
-    private void givenTempFileOfFormat(InputFormat format) throws IOException {
+    private void givenTempFileOfFormat(FileUriCollectPhase.InputFormat format) throws IOException {
         tempFilePath = createTempFile();
         tmpFile = tempFilePath.toFile();
 
@@ -212,7 +212,7 @@ public class FileReadingIteratorTest extends CrateUnitTest {
         fileUri = tempFilePath.toUri().toString();
     }
 
-    private BatchIterator<Row> createBatchIterator(Collection<String> fileUris, String compression, InputFormat format) {
+    private BatchIterator<Row> createBatchIterator(Collection<String> fileUris, String compression, FileUriCollectPhase.InputFormat format) {
         Reference raw = createReference("_raw", DataTypes.STRING);
         InputFactory.Context<LineCollectorExpression<?>> ctx =
             inputFactory.ctxForRefs(FileLineReferenceResolver::getImplementation);
